@@ -18,18 +18,18 @@ class TodoRecordProcessor(private val cloudSearchDomainClient: AmazonCloudSearch
   override def initialize(initializationInput: InitializationInput): Unit = {}
 
   override def processRecords(processRecordsInput: ProcessRecordsInput): Unit = {
-    for (record <- processRecordsInput.getRecords().asScala) {
+    for (record <- processRecordsInput.getRecords.asScala) {
       val streamRecord = record.asInstanceOf[RecordAdapter].getInternalObject
 
       streamRecord.getEventName match {
         case "INSERT" | "MODIFY" =>
-          val image = streamRecord.getDynamodb().getNewImage()
+          val image = streamRecord.getDynamodb.getNewImage
 
-          val document = createSearchDocument(image)
+          val document = createDocumentToUpload(image)
 
-          val json = document.toString()
+          val json = document.toString
 
-          val stream = new ByteArrayInputStream(json.getBytes())
+          val stream = new ByteArrayInputStream(json.getBytes)
 
           val request = new UploadDocumentsRequest()
             .withDocuments(stream)
@@ -37,14 +37,28 @@ class TodoRecordProcessor(private val cloudSearchDomainClient: AmazonCloudSearch
             .withContentType(ContentType.Applicationjson)
 
           cloudSearchDomainClient.uploadDocuments(request)
-        case "REMOVE" => // todo
+        case "REMOVE" =>
+          val id = streamRecord.getDynamodb.getKeys.get("Id").getS
+
+          val document = createDocumentToDelete(id)
+
+          val json = document.toString
+
+          val stream = new ByteArrayInputStream(json.getBytes)
+
+          val request = new UploadDocumentsRequest()
+            .withDocuments(stream)
+            .withContentLength(json.length.toLong)
+            .withContentType(ContentType.Applicationjson)
+
+          cloudSearchDomainClient.uploadDocuments(request)
       }
     }
 
     processRecordsInput.getCheckpointer.checkpoint
   }
 
-  private def createSearchDocument(record: util.Map[String, AttributeValue]): JsonNode = mapper.createArrayNode()
+  private def createDocumentToUpload(record: util.Map[String, AttributeValue]): JsonNode = mapper.createArrayNode()
     .add(mapper.createObjectNode()
       .put("type", "add")
       .put("id", record.get("Id").getS)
@@ -53,6 +67,11 @@ class TodoRecordProcessor(private val cloudSearchDomainClient: AmazonCloudSearch
         .put("userid", record.get("UserId").getS)
         .put("content", record.get("Content").getS)
       ))
+
+  private def createDocumentToDelete(id: String): JsonNode = mapper.createArrayNode()
+    .add(mapper.createObjectNode()
+      .put("type", "delete")
+      .put("id", id))
 
   override def shutdown(shutdownInput: ShutdownInput): Unit = {
     if (shutdownInput.getShutdownReason eq ShutdownReason.TERMINATE) {
