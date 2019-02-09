@@ -21,38 +21,25 @@ class TodoRecordProcessor(private val cloudSearchDomainClient: AmazonCloudSearch
     for (record <- processRecordsInput.getRecords.asScala) {
       val streamRecord = record.asInstanceOf[RecordAdapter].getInternalObject
 
-      streamRecord.getEventName match {
+      val document = streamRecord.getEventName match {
         case "INSERT" | "MODIFY" =>
           val image = streamRecord.getDynamodb.getNewImage
-
-          val document = createDocumentToUpload(image)
-
-          val json = document.toString
-
-          val stream = new ByteArrayInputStream(json.getBytes)
-
-          val request = new UploadDocumentsRequest()
-            .withDocuments(stream)
-            .withContentLength(json.length.toLong)
-            .withContentType(ContentType.Applicationjson)
-
-          cloudSearchDomainClient.uploadDocuments(request)
+          createDocumentToUpload(image)
         case "REMOVE" =>
           val id = streamRecord.getDynamodb.getKeys.get("Id").getS
-
-          val document = createDocumentToDelete(id)
-
-          val json = document.toString
-
-          val stream = new ByteArrayInputStream(json.getBytes)
-
-          val request = new UploadDocumentsRequest()
-            .withDocuments(stream)
-            .withContentLength(json.length.toLong)
-            .withContentType(ContentType.Applicationjson)
-
-          cloudSearchDomainClient.uploadDocuments(request)
+          createDocumentToDelete(id)
       }
+
+      val json = document.toString
+
+      val stream = new ByteArrayInputStream(json.getBytes)
+
+      val request = new UploadDocumentsRequest()
+        .withDocuments(stream)
+        .withContentLength(json.length.toLong)
+        .withContentType(ContentType.Applicationjson)
+
+      cloudSearchDomainClient.uploadDocuments(request)
     }
 
     processRecordsInput.getCheckpointer.checkpoint
