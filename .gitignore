@@ -1,6 +1,6 @@
 
-# Created by https://www.gitignore.io/api/sbt,scala,jetbrains
-# Edit at https://www.gitignore.io/?templates=sbt,scala,jetbrains
+# Created by https://www.gitignore.io/api/sbt,scala,jetbrains,terraform
+# Edit at https://www.gitignore.io/?templates=sbt,scala,jetbrains,terraform
 
 ### JetBrains ###
 # Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and WebStorm
@@ -99,4 +99,31 @@ project/plugins/project/
 *.class
 *.log
 
-# End of https://www.gitignore.io/api/sbt,scala,jetbrains
+### Terraform ###
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+
+# Ignore any .tfvars files that are generated automatically for each Terraform run. Most
+# .tfvars files are managed as part of configuration and so should be included in
+# version control.
+#
+terraform.tfvars
+
+# Ignore override files as they are usually used to override resources locally and so
+# are not checked in
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Include override files you do wish to add to version control using negated pattern
+# !example_override.tf
+
+# End of https://www.gitignore.io/api/sbt,scala,jetbrains,terraform
